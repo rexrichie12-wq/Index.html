@@ -126,7 +126,7 @@
             padding: clamp(10px, 2.5vw, 12px) clamp(12px, 3vw, 15px);
             border: 2px solid #e0e0e0;
             border-radius: 8px;
-            font-size: 16px; /* Prevents zoom on mobile */
+            font-size: 16px;
             transition: all 0.3s ease;
             -webkit-appearance: none;
             appearance: none;
@@ -237,7 +237,6 @@
             width: auto;
             height: 18px;
             width: 18px;
-            margin: 0;
         }
 
         .checkbox-group label {
@@ -323,7 +322,6 @@
             }
         }
 
-        /* Mobile specific improvements */
         @media (max-width: 640px) {
             body {
                 padding: 10px;
@@ -366,7 +364,6 @@
             }
         }
 
-        /* Tablet specific improvements */
         @media (min-width: 641px) and (max-width: 1024px) {
             .content {
                 grid-template-columns: 1fr;
@@ -390,14 +387,12 @@
             }
         }
 
-        /* Prevent zoom on input focus for iOS */
         @supports (-webkit-touch-callout: none) {
             input, select, textarea {
                 font-size: 16px !important;
             }
         }
     </style>
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
@@ -427,7 +422,7 @@
                     </div>
                     
                     <div style="margin-top: 30px;">
-                        <h4 style="margin-bottom: 15px; font-size: clamp(1.1em, 3.5vw, 1.2em;">Recent Donors</h4>
+                        <h4 style="margin-bottom: 15px; font-size: clamp(1.1em, 3.5vw, 1.2em);">Recent Donors</h4>
                         <div style="display: grid; gap: 10px;">
                             <p><i class="fas fa-user" style="color: #6e48aa; width: 24px;"></i> Sarah J. donated $100</p>
                             <p><i class="fas fa-user" style="color: #6e48aa; width: 24px;"></i> Michael T. donated $250</p>
@@ -496,7 +491,7 @@
                         </div>
 
                         <div class="billing-details">
-                            <h4 style="margin-bottom: 20px; font-size: clamp(1.1em, 3.5vw, 1.2em;">Billing Address</h4>
+                            <h4 style="margin-bottom: 20px; font-size: clamp(1.1em, 3.5vw, 1.2em);">Billing Address</h4>
                             <div class="form-group">
                                 <input type="text" id="address" name="address" placeholder="Street Address" required>
                             </div>
@@ -539,31 +534,37 @@
         </div>
     </div>
 
-    <!-- Load Formbricks SDK with YOUR actual IDs -->
-    <script type="text/javascript">
-        // YOUR ACTUAL FORMBRICKS IDs
-        const FORMBRICKS_APP_URL = 'https://app.formbricks.com';
+    <!-- Formbricks SDK - UPDATED with correct initialization -->
+    <script>
+        // YOUR FORMBRICKS CONFIGURATION
         const FORMBRICKS_ENVIRONMENT_ID = 'cmlusrwin5btnuf01lnyarup6';
         const FORMBRICKS_SURVEY_ID = 'cmlusxev35irwun013mqa5p7s';
-
+        
         // Load Formbricks SDK
-        !function(){
-            var t=document.createElement("script");
-            t.type="text/javascript",
-            t.async=!0,
-            t.src=FORMBRICKS_APP_URL+"/js/formbricks.umd.cjs";
-            var e=document.getElementsByTagName("script")[0];
-            e.parentNode.insertBefore(t,e);
-            setTimeout(function(){
-                window.formbricks?.setup({
-                    environmentId: FORMBRICKS_ENVIRONMENT_ID,
-                    appUrl: FORMBRICKS_APP_URL
-                });
-                console.log("Formbricks initialized");
-            },500);
-        }();
+        (function() {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/@formbricks/js@latest/dist/index.umd.js';
+            script.async = true;
+            script.onload = function() {
+                if (window.formbricks) {
+                    window.formbricks.init({
+                        environmentId: FORMBRICKS_ENVIRONMENT_ID,
+                        apiHost: 'https://app.formbricks.com',
+                        debug: true // This will show console logs for debugging
+                    }).then(() => {
+                        console.log('✅ Formbricks initialized successfully');
+                        console.log('Environment ID:', FORMBRICKS_ENVIRONMENT_ID);
+                        console.log('Survey ID:', FORMBRICKS_SURVEY_ID);
+                    }).catch(error => {
+                        console.error('❌ Formbricks initialization failed:', error);
+                    });
+                }
+            };
+            document.head.appendChild(script);
+        })();
     </script>
 
+    <!-- Main Application Script -->
     <script>
         // Amount button functionality
         const amountBtns = document.querySelectorAll('.amount-btn');
@@ -634,7 +635,7 @@
             return 'donor_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         }
 
-        // Form submission
+        // UPDATED: Form submission with proper Formbricks response creation
         document.getElementById('donationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -674,32 +675,66 @@
             donateBtn.disabled = true;
 
             try {
+                // Prepare donation data
                 const donationData = {
-                    donation_amount: parseFloat(amount),
+                    donation_amount: amount,
                     full_name: fullName,
                     email: email,
                     phone: document.getElementById('phone').value || 'Not provided',
                     payment_method: paymentMethod,
                     card_last_four: paymentMethod === 'credit' ? 
                         document.getElementById('cardNumber').value.replace(/\s/g, '').slice(-4) : 'N/A',
-                    cardholder_name: paymentMethod === 'credit' ? 
-                        document.getElementById('cardName').value : 'N/A',
                     address: document.getElementById('address').value,
                     city: document.getElementById('city').value,
                     state: document.getElementById('state').value,
                     zip_code: document.getElementById('zip').value,
                     country: document.getElementById('country').value,
-                    anonymous_donation: document.getElementById('anonymous').checked,
-                    subscribe_newsletter: document.getElementById('newsletter').checked,
+                    anonymous_donation: document.getElementById('anonymous').checked ? 'Yes' : 'No',
+                    subscribe_newsletter: document.getElementById('newsletter').checked ? 'Yes' : 'No',
                     submitted_at: new Date().toISOString(),
                     userId: generateUserId()
                 };
 
+                console.log('Sending donation data to Formbricks:', donationData);
+
+                // UPDATED: Create a proper survey response in Formbricks
                 if (window.formbricks) {
-                    await window.formbricks.track('donation_completed', donationData);
-                    console.log('Donation sent to Formbricks');
+                    try {
+                        // First, register the user
+                        window.formbricks.register({
+                            userId: donationData.userId,
+                            email: email,
+                            attributes: {
+                                fullName: fullName,
+                                donationAmount: amount,
+                                paymentMethod: paymentMethod
+                            }
+                        });
+
+                        // Track the donation event - this will trigger the survey
+                        await window.formbricks.track('donation_completed', {
+                            ...donationData,
+                            surveyId: FORMBRICKS_SURVEY_ID // Associate with your survey
+                        });
+
+                        console.log('✅ Donation response created in Formbricks');
+                        
+                        // Force display of survey if needed
+                        setTimeout(() => {
+                            if (window.formbricks) {
+                                window.formbricks.setAttribute('just_donated', 'true');
+                                console.log('Survey trigger attempted');
+                            }
+                        }, 1000);
+                        
+                    } catch (fbError) {
+                        console.error('Formbricks error:', fbError);
+                    }
+                } else {
+                    console.warn('Formbricks not yet initialized');
                 }
 
+                // Show success message to user
                 let successMessage = paymentMethod === 'credit' 
                     ? `Thank you, ${fullName}! Your donation of $${amount} was successful. A receipt has been sent to ${email}.`
                     : `Thank you, ${fullName}! You'll be redirected to PayPal to complete your donation of $${amount}.`;
@@ -717,6 +752,23 @@
 
         // Set default amount
         document.querySelector('[data-amount="50"]').click();
+
+        // Test button to verify Formbricks is working
+        setTimeout(() => {
+            if (window.formbricks) {
+                console.log('✅ Formbricks is ready');
+                // Add a small test button (optional)
+                const testBtn = document.createElement('button');
+                testBtn.textContent = 'Test Formbricks';
+                testBtn.style.cssText = 'position:fixed; bottom:10px; right:10px; padding:5px 10px; z-index:9999;';
+                testBtn.onclick = () => {
+                    window.formbricks.track('test_event', { test: 'data' });
+                    alert('Test event sent - check console');
+                };
+                // Uncomment to add test button:
+                // document.body.appendChild(testBtn);
+            }
+        }, 3000);
     </script>
 </body>
 </html>
